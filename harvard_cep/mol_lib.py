@@ -3,33 +3,29 @@ import numpy as np
 import os
 import sys
 import torch
+from tqdm import tqdm
 
 class _mol_lib(object):
 
-    def __init__(self, args):
+    def __init__(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self.lib = ctypes.CDLL('%s/build/dll/libmol.so' % dir_path)
 
-        self.lib.Smiles2Graph.restype = ctypes.c_void_p
+        # self.lib.Smiles2Graph.restype = ctypes.c_void_p
         self.lib.PrepareBatchFeature.restype = ctypes.c_int
+        self.lib.DumpFeatures.restype = ctypes.c_int
+        self.lib.LoadMolGraph.restype = ctypes.c_int
 
         self.lib.NodeFeatDim.restype = ctypes.c_int
         self.lib.EdgeFeatDim.restype = ctypes.c_int
         self.lib.NumNodes.restype = ctypes.c_int
         self.lib.NumEdges.restype = ctypes.c_int
-
-        self.lib.EdgeList.restype = ctypes.POINTER(ctypes.c_int)
-
-        if sys.version_info[0] > 2:
-            args = [arg.encode() for arg in args]  # str -> bytes for each element in args
-        arr = (ctypes.c_char_p * len(args))()
-        arr[:] = args
-        self.lib.Init(len(args), arr)
+        self.lib.EdgeList.restype = ctypes.c_void_p
 
         self.num_node_feats = self.lib.NodeFeatDim()
         self.num_edge_feats = self.lib.EdgeFeatDim()
 
-    def PrepareNodeEdgeFeatures(self, molgraph_list):
+    def PrepareFeatureLabel(self, molgraph_list):
         c_list = (ctypes.c_void_p * len(molgraph_list))()
         total_num_nodes = 0
         total_num_edges = 0
@@ -40,15 +36,41 @@ class _mol_lib(object):
 
         torch_node_feat = torch.zeros(total_num_nodes, self.num_node_feats)
         torch_edge_feat = torch.zeros(total_num_edges * 2, self.num_edge_feats)
+        torch_label = torch.zeros(len(molgraph_list), 1)
 
         node_feat = torch_node_feat.numpy()
-        edge_feat = torch_edge_feat.numpy()
-        
+        edge_feat = torch_edge_feat.numpy()    
+        label = torch_label.numpy()
+
         self.lib.PrepareBatchFeature(len(molgraph_list), ctypes.cast(c_list, ctypes.c_void_p),
-                                    node_feat.ctypes.data, edge_feat.ctypes.data)
+                                    ctypes.c_void_p(node_feat.ctypes.data), 
+                                    ctypes.c_void_p(edge_feat.ctypes.data))
 
-        return torch_node_feat, torch_edge_feat
+        for i in range(len(molgraph_list)):
+            label[i] = molgraph_list[i].pce
 
+        return torch_node_feat, torch_edge_feat, torch_label
+
+    def DumpFeatures(self, fname):
+        p = ctypes.cast(fname, ctypes.c_char_p)
+        self.lib.DumpFeatures(p)
+
+    def LoadMolGraph(self, phase, str_pce_tuples):
+        fname = 'data/%s.txt.bin' % phase
+        assert os.path.isfile(fname)
+        
+        fname = ctypes.cast(fname, ctypes.c_char_p)
+        num_graphs = len(str_pce_tuples)
+        c_list = (ctypes.c_void_p * num_graphs)()
+        t = self.lib.LoadMolGraph(fname, ctypes.cast(c_list, ctypes.c_void_p))
+        assert t == num_graphs
+
+        molgraph_list = []
+        for i in tqdm(range(0, t)):
+            g = MolGraph(c_list[i], str_pce_tuples[i][0], str_pce_tuples[i][1])            
+            molgraph_list.append(g)
+
+        return molgraph_list
     # def __CtypeNetworkX(self, g):
     #     edges = g.edges()
     #     e_list_from = (ctypes.c_int * len(edges))()
@@ -90,24 +112,23 @@ class _mol_lib(object):
 
 dll_path = '%s/build/dll/libmol.so' % os.path.dirname(os.path.realpath(__file__))
 if os.path.exists(dll_path):
-    MOLLIB = _mol_lib(sys.argv)
+    MOLLIB = _mol_lib()
 
     class MolGraph(object):
 
-        def __init__(self, smiles, pce):
+        def __init__(self, handle, smiles, pce):
             self.smiles = smiles
-            p = ctypes.cast(smiles, ctypes.c_char_p)
-            self.handle = MOLLIB.lib.Smiles2Graph(p)            
+            self.handle = ctypes.c_void_p(handle)
             self.num_nodes = MOLLIB.lib.NumNodes(self.handle)
             self.num_edges = MOLLIB.lib.NumEdges(self.handle)
-            self.edge_pairs = np.ctypeslib.as_array(MOLLIB.lib.EdgeList(self.handle), shape=( self.num_edges * 2, ))
+            # self.edge_pairs = np.ctypeslib.as_array(MOLLIB.lib.EdgeList(self.handle), shape=( self.num_edges * 2, ))
+            self.edge_pairs = ctypes.c_void_p(MOLLIB.lib.EdgeList(self.handle))
             self.pce = pce
 else:
     MOLLIB = None
     MolGraph = None
 
 if __name__ == '__main__':
-
-    g = MolGraph('c1ccccc1', 0)
-    node_feat, edge_feat = MOLLIB.PrepareNodeEdgeFeatures([g])
-    
+    MOLLIB.DumpFeatures('data/train.txt')
+    MOLLIB.DumpFeatures('data/valid.txt')
+    MOLLIB.DumpFeatures('data/test.txt')
