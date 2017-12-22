@@ -1,4 +1,6 @@
-data/
+**/data/train*
+**/data/test*
+**/data/valid*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

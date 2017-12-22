@@ -27,9 +27,8 @@ def find_weight_idx(lower, upper, weights, pce):
 def resampling_idxes(d):
     print('resampling indices')
     labels = []
-    for key in d:        
-        for t in d[key]:
-            labels.append(t[1])
+    for t in d['train']:
+        labels.append(t[1])
     width = 0.05
     labels = np.array(labels, float)
 
