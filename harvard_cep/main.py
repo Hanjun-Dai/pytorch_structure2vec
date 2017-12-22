@@ -23,6 +23,7 @@ cmd_opt = argparse.ArgumentParser(description='Argparser for harvard cep')
 cmd_opt.add_argument('-saved_model', default=None, help='start from existing model')
 cmd_opt.add_argument('-save_dir', default='./saved', help='save_dir')
 cmd_opt.add_argument('-mode', default='cpu', help='cpu/gpu')
+cmd_opt.add_argument('-phase', default='train', help='train/test')
 cmd_opt.add_argument('-batch_size', type=int, default=50, help='minibatch size')
 cmd_opt.add_argument('-seed', type=int, default=1, help='seed')
 cmd_opt.add_argument('-gen_depth', type=int, default=10, help='depth of generator')
@@ -54,21 +55,22 @@ def loop_dataset(mol_list, regressor, sample_idxes, optimizer=None, start_iter=N
         _, mae, mse = regressor(batch_graph)
 
         mae = mae.data.cpu().numpy()[0]
-        rmse = np.sqrt(mse.data.cpu().numpy()[0])
-        pbar.set_description('mae: %0.5f rmse: %0.5f' % (mae, rmse) )
+        mse = mse.data.cpu().numpy()[0]
+        pbar.set_description('mae: %0.5f rmse: %0.5f' % (mae, np.sqrt(mse)) )
 
         if optimizer is not None:
             optimizer.zero_grad()
             mse.backward()         
             optimizer.step()
 
-        total_loss.append( np.array([mae, rmse]) * len(selected_idx))
+        total_loss.append( np.array([mae, mse]) * len(selected_idx))
 
         n_samples += len(selected_idx)
     if optimizer is None:
         assert n_samples == len(sample_idxes)
     total_loss = np.array(total_loss)
     avg_loss = np.sum(total_loss, 0) / n_samples
+    avg_loss[1] = np.sqrt(avg_loss[1])
     return avg_loss
 
 class Regressor(nn.Module):
@@ -96,11 +98,6 @@ if __name__ == '__main__':
     np.random.seed(cmd_args.seed)
     torch.manual_seed(cmd_args.seed)
     raw_data_dict = load_raw_data()
-    train_idxes = resampling_idxes(raw_data_dict)
-    cooked_data_dict = {}
-    # cooked_data_dict['test'] = MOLLIB.LoadMolGraph('test', raw_data_dict['test'])
-    for d in raw_data_dict:
-        cooked_data_dict[d] = MOLLIB.LoadMolGraph(d, raw_data_dict[d])
 
     regressor = Regressor()
     if cmd_args.mode == 'gpu':
@@ -108,7 +105,18 @@ if __name__ == '__main__':
     if cmd_args.saved_model is not None and cmd_args.saved_model != '':
         if os.path.isfile(cmd_args.saved_model):
             print('loading model from %s' % cmd_args.saved_model)
-            regressor.load_state_dict(torch.load(cmd_args.saved_model))
+            regressor.load_state_dict(torch.load(cmd_args.saved_model))        
+
+    if cmd_args.phase == 'test':
+        test_data = MOLLIB.LoadMolGraph('test', raw_data_dict['test'])
+        test_loss = loop_dataset(test_data, regressor, list(range(len(test_data))))
+        print('\033[93maverage test loss: mae %.5f rmse %.5f\033[0m' % (test_loss[0], test_loss[1]))
+        sys.exit()
+
+    train_idxes = resampling_idxes(raw_data_dict)
+    cooked_data_dict = {}
+    for d in raw_data_dict:
+        cooked_data_dict[d] = MOLLIB.LoadMolGraph(d, raw_data_dict[d])
 
     optimizer = optim.Adam(regressor.parameters(), lr=cmd_args.learning_rate)
     iter_train = (len(train_idxes) + (cmd_args.batch_size - 1)) // cmd_args.batch_size
