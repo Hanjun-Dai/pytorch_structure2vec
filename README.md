@@ -33,8 +33,10 @@ The test split is also used in our paper (Dai. et.al, ICML 2016).
 ### Model dump
 
 The pretrained model is under ```saved/``` folder. 
+
+##### for mean_field: 
 ```
-$ python main.py -mode gpu -saved_model saved/mean_field.model -phast test
+$ python main.py -gm mean_field -saved_model saved/mean_field.model -phast test
 ====== begin of s2v configuration ======
 | msg_average = 0
 ======   end of s2v configuration ======
@@ -48,6 +50,24 @@ num_nodes: 6094162	num_edges: 7357400
 100%|███████████████████████████████████████████████████████████████████████████████████| 220289/220289 [00:01<00:00, 130103.34it/s]
 mae: 0.08846 rmse: 0.11290: 100%|███████████████████████████████████████████████████████████| 4406/4406 [00:15<00:00, 279.01batch/s]
 average test loss: mae 0.07017 rmse 0.09724
+```
+##### for loopy_bp:
+```
+$ python main.py -gm loopy_bp -saved_model saved/loopy_bp.model -phast test
+====== begin of s2v configuration ======
+| msg_average = 0
+======   end of s2v configuration ======
+loading data
+train: 1900000
+valid: 82601
+test: 220289
+loading model from saved/loopy_bp.model
+loading graph from data/test.txt.bin
+num_nodes: 6094162	num_edges: 7357400
+100%|███████████████████████████████████████████████████████████████████████████████████| 220289/220289 [00:01<00:00, 131913.93it/s]
+mae: 0.06883 rmse: 0.08762: 100%|███████████████████████████████████████████████████████████| 4406/4406 [00:17<00:00, 246.84batch/s]
+average test loss: mae 0.06212 rmse 0.08747
+
 ```
 
 #### Reference
