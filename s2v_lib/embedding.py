@@ -19,11 +19,17 @@ class EmbedMeanField(nn.Module):
     def __init__(self, latent_dim, output_dim, num_node_feats, num_edge_feats, max_lv = 3):
         super(EmbedMeanField, self).__init__()
         self.latent_dim = latent_dim
+        self.output_dim = output_dim
+        self.num_node_feats = num_node_feats
+        self.num_edge_feats = num_edge_feats
+
         self.max_lv = max_lv
 
         self.w_n2l = nn.Linear(num_node_feats, latent_dim)
-        self.w_e2l = nn.Linear(num_edge_feats, latent_dim)
-        self.out_params = nn.Linear(latent_dim, output_dim)
+        if num_edge_feats > 0:
+            self.w_e2l = nn.Linear(num_edge_feats, latent_dim)
+        if output_dim > 0:
+            self.out_params = nn.Linear(latent_dim, output_dim)
 
         self.conv_params = nn.Linear(latent_dim, latent_dim)
         weights_init(self)
@@ -35,7 +41,8 @@ class EmbedMeanField(nn.Module):
             e2n_sp = e2n_sp.cuda()
             subg_sp = subg_sp.cuda()
         node_feat = Variable(node_feat)
-        edge_feat = Variable(edge_feat)
+        if edge_feat is not None:
+            edge_feat = Variable(edge_feat)
         n2n_sp = Variable(n2n_sp)
         e2n_sp = Variable(e2n_sp)
         subg_sp = Variable(subg_sp)
@@ -46,10 +53,11 @@ class EmbedMeanField(nn.Module):
 
     def mean_field(self, node_feat, edge_feat, n2n_sp, e2n_sp, subg_sp):
         input_node_linear = self.w_n2l(node_feat)
-        input_edge_linear = self.w_e2l(edge_feat)
-        e2npool_input = gnn_spmm(e2n_sp, input_edge_linear)
-
-        input_message = input_node_linear + e2npool_input
+        input_message = input_node_linear
+        if edge_feat is not None:
+            input_edge_linear = self.w_e2l(edge_feat)
+            e2npool_input = gnn_spmm(e2n_sp, input_edge_linear)
+            input_message += e2npool_input
         input_potential = F.relu(input_message)
 
         lv = 0
@@ -61,9 +69,12 @@ class EmbedMeanField(nn.Module):
 
             cur_message_layer = F.relu(merged_linear)
             lv += 1
-        out_linear = self.out_params(cur_message_layer)
-        reluact_fp = F.relu(out_linear)
-
+        if self.output_dim > 0:
+            out_linear = self.out_params(cur_message_layer)
+            reluact_fp = F.relu(out_linear)
+        else:
+            reluact_fp = cur_message_layer
+            
         y_potential = gnn_spmm(subg_sp, reluact_fp)
 
         return F.relu(y_potential)
