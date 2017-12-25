@@ -36,7 +36,7 @@ The pretrained model is under ```saved/``` folder.
 
 ##### for mean_field: 
 ```
-$ python main.py -gm mean_field -saved_model saved/mean_field.model -phast test
+$ python main.py -gm mean_field -saved_model saved/mean_field.model -phase test
 ====== begin of s2v configuration ======
 | msg_average = 0
 ======   end of s2v configuration ======
@@ -53,7 +53,7 @@ average test loss: mae 0.07017 rmse 0.09724
 ```
 ##### for loopy_bp:
 ```
-$ python main.py -gm loopy_bp -saved_model saved/loopy_bp.model -phast test
+$ python main.py -gm loopy_bp -saved_model saved/loopy_bp.model -phase test
 ====== begin of s2v configuration ======
 | msg_average = 0
 ======   end of s2v configuration ======
