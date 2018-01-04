@@ -114,7 +114,10 @@ if __name__ == '__main__':
     if cmd_args.saved_model is not None and cmd_args.saved_model != '':
         if os.path.isfile(cmd_args.saved_model):
             print('loading model from %s' % cmd_args.saved_model)
-            regressor.load_state_dict(torch.load(cmd_args.saved_model))        
+            if cmd_args.mode == 'cpu':
+                regressor.load_state_dict(torch.load(cmd_args.saved_model, map_location=lambda storage, loc: storage))
+            else:
+                regressor.load_state_dict(torch.load(cmd_args.saved_model))
 
     if cmd_args.phase == 'test':
         test_data = MOLLIB.LoadMolGraph('test', raw_data_dict['test'])
