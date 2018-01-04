@@ -38,7 +38,7 @@ The above dropbox folder already contains the cooked data. But if you want to co
 
 ```
 cd harvard_cep
-python mol_lib.pu
+python mol_lib.py
 ```
 
 ### Model dump
