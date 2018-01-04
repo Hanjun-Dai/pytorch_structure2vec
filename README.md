@@ -24,11 +24,22 @@ cd harvard_cep
 make -j4
 ```
 
-Download data. Put it under the data folder. Here is the data split provided by [Wengong Jin](http://people.csail.mit.edu/wengong/). 
+### Prepare data
 
-https://drive.google.com/drive/folders/0B0GLTTNiVPEkdmlac2tDSzBFVzg
+The raw data and cooked data are available at the following link:
+https://www.dropbox.com/sh/eylta6a24fc9xo4/AAANyIgKnq49HB0Ud989JGEZa?dl=0
 
-The test split is also used in our paper (Dai. et.al, ICML 2016). 
+After you download the files, put them under the data folder. 
+
+We used the same dataset in our paper (Dai. et.al, ICML 2016). Here the data split as is provided by [Wengong Jin](http://people.csail.mit.edu/wengong/) in [google drive](https://drive.google.com/drive/folders/0B0GLTTNiVPEkdmlac2tDSzBFVzg). So minor performance improvement is observed. 
+
+##### cook data
+The above dropbox folder already contains the cooked data. But if you want to cook it on your own, then you just need to download the raw txt data into the data folder, and do the following:
+
+```
+cd harvard_cep
+python mol_lib.pu
+```
 
 ### Model dump
 
