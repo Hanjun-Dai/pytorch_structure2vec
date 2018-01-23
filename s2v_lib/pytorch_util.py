@@ -43,6 +43,10 @@ def weights_init(m):
         else:
             _param_init(p)
 
+    for name, p in m.named_parameters():
+        if not '.' in name: # top-level parameters
+            _param_init(p)
+
 class MySpMM(torch.autograd.Function):
 
     @staticmethod
