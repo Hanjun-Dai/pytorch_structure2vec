@@ -48,18 +48,16 @@ class Classifier(nn.Module):
         
         concat_feat = torch.LongTensor(concat_feat).view(-1, 1)
         node_feat = torch.zeros(n_nodes, cmd_args.feat_dim)
-        if cmd_args.mode == 'gpu':
-            node_feat = node_feat.cuda()
-        
         node_feat.scatter_(1, concat_feat, 1)
+
+        if cmd_args.mode == 'gpu':
+            node_feat = node_feat.cuda() 
+            labels = labels.cuda()
 
         return node_feat, labels
 
     def forward(self, batch_graph): 
         node_feat, labels = self.PrepareFeatureLabel(batch_graph)
-        if cmd_args.mode == 'gpu':
-            node_feat = node_feat.cuda()
-            labels = labels.cuda()
         embed = self.s2v(batch_graph, node_feat, None)
         
         return self.mlp(embed, labels)

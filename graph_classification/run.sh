@@ -22,4 +22,5 @@ python main.py \
     -max_lv $LV \
     -latent_dim $CONV_SIZE \
     -out_dim $FP_LEN \
-    -batch_size $bsize
+    -batch_size $bsize \
+    $@
