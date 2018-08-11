@@ -4,6 +4,7 @@ pytorch implementation of structure2vec
 ## Requirements
 
 - rdkit : [Q3 2017 Release](https://github.com/rdkit/rdkit/releases/tag/Release_2017_09_1)
+- boost : Boost 1.61.0
 
 ## Setup
 
