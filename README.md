@@ -1,6 +1,13 @@
 # pytorch_structure2vec
 pytorch implementation of structure2vec
 
+## Requirements
+
+The following versions have been tested. But newer versions should also be fine. 
+
+- rdkit : [Q3 2017 Release](https://github.com/rdkit/rdkit/releases/tag/Release_2017_09_1, Release_2017_09_2)
+- boost : Boost 1.61.0, 1.65.1
+
 ## Setup
 
 Build the c++ backend of s2v_lib and you are all set.
