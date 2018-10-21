@@ -14,6 +14,21 @@ from tqdm import tqdm
 
 from s2v_lib import S2VLIB
 
+def is_cuda_float(mat):
+    version = get_torch_version()
+    if version >= 0.4:
+        return mat.is_cuda
+    return type(mat) is torch.cuda.FloatTensor
+
+def to_scalar(mat):
+    version = get_torch_version()
+    if version >= 0.4:
+        return mat.item()
+    return mat.data.cpu().numpy()[0]
+ 
+def get_torch_version():
+    return float('.'.join(torch.__version__.split('.')[0:2]))
+
 def glorot_uniform(t):
     if len(t.size()) == 2:
         fan_in, fan_out = t.size()

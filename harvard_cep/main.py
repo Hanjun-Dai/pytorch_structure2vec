@@ -12,6 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 sys.path.append('%s/../s2v_lib' % os.path.dirname(os.path.realpath(__file__)))
+from pytorch_util import to_scalar
 from embedding import EmbedMeanField, EmbedLoopyBP
 from mlp import MLPRegression
 
@@ -60,8 +61,8 @@ def loop_dataset(mol_list, regressor, sample_idxes, optimizer=None, start_iter=N
             mse.backward()         
             optimizer.step()
 
-        mae = mae.data.cpu().numpy()[0]
-        mse = mse.data.cpu().numpy()[0]
+        mae = to_scalar(mae)
+        mse = to_scalar(mse)
         pbar.set_description('mae: %0.5f rmse: %0.5f' % (mae, np.sqrt(mse)) )
 
         total_loss.append( np.array([mae, mse]) * len(selected_idx))

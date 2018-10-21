@@ -13,7 +13,7 @@ import torch.optim as optim
 from tqdm import tqdm
 
 from s2v_lib import S2VLIB
-from pytorch_util import weights_init, gnn_spmm
+from pytorch_util import weights_init, gnn_spmm, is_cuda_float
 
 class EmbedMeanField(nn.Module):
     def __init__(self, latent_dim, output_dim, num_node_feats, num_edge_feats, max_lv = 3):
@@ -36,7 +36,7 @@ class EmbedMeanField(nn.Module):
 
     def forward(self, graph_list, node_feat, edge_feat): 
         n2n_sp, e2n_sp, subg_sp = S2VLIB.PrepareMeanField(graph_list)
-        if type(node_feat) is torch.cuda.FloatTensor:
+        if is_cuda_float(node_feat):
             n2n_sp = n2n_sp.cuda()
             e2n_sp = e2n_sp.cuda()
             subg_sp = subg_sp.cuda()
@@ -94,7 +94,7 @@ class EmbedLoopyBP(nn.Module):
 
     def forward(self, graph_list, node_feat, edge_feat): 
         n2e_sp, e2e_sp, e2n_sp, subg_sp = S2VLIB.PrepareLoopyBP(graph_list)
-        if type(node_feat) is torch.cuda.FloatTensor:
+        if is_cuda_float(node_feat):
             n2e_sp = n2e_sp.cuda()
             e2e_sp = e2e_sp.cuda()
             e2n_sp = e2n_sp.cuda()
