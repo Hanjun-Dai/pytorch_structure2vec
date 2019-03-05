@@ -52,14 +52,14 @@ class _mol_lib(object):
         return torch_node_feat, torch_edge_feat, torch_label
 
     def DumpFeatures(self, fname):
+        fname = fname.encode('utf-8')
         p = ctypes.cast(fname, ctypes.c_char_p)
         self.lib.DumpFeatures(p)
 
     def LoadMolGraph(self, phase, str_pce_tuples):
         fname = 'data/%s.txt.bin' % phase
         assert os.path.isfile(fname)
-        
-        fname = ctypes.cast(fname, ctypes.c_char_p)
+        fname = fname.encode('utf-8')
         num_graphs = len(str_pce_tuples)
         c_list = (ctypes.c_void_p * num_graphs)()
         t = self.lib.LoadMolGraph(fname, ctypes.cast(c_list, ctypes.c_void_p))

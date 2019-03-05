@@ -3,7 +3,7 @@ import numpy as np
 import random
 from tqdm import tqdm
 import os
-import cPickle as cp
+import pickle as cp
 
 def load_raw_data():
     print('loading data')
@@ -31,6 +31,7 @@ def resampling_idxes(d):
         labels.append(t[1])
     width = 0.05
     labels = np.array(labels, float)
+    return range(len(d['train']))
 
     lower = min(labels)
     upper = max(labels)
@@ -49,9 +50,9 @@ def resampling_idxes(d):
         region_tuples.append((cur, cur + width, max_cnt / cnt[i]))
         cur += width
 
-	pce_values = []
+    pce_values = []
     for p in d['train']:
-		pce_values.append(p[1])
+        pce_values.append(p[1])
 
     lower, upper, weights = zip(*region_tuples)
     sample_idxes = {}
