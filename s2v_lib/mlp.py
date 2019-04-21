@@ -12,7 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from tqdm import tqdm
 
-from pytorch_util import weights_init
+from pytorch_util import weights_init, to_scalar
 
 class MLPRegression(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -58,7 +58,8 @@ class MLPClassifier(nn.Module):
             loss = F.nll_loss(logits, y)
 
             pred = logits.data.max(1, keepdim=True)[1]
-            acc = pred.eq(y.data.view_as(pred)).cpu().sum() / float(y.size()[0])
+            acc = to_scalar(pred.eq(y.data.view_as(pred)).sum())
+            acc = float(acc) / float(y.size()[0])
             return logits, loss, acc
         else:
             return logits

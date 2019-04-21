@@ -1,3 +1,5 @@
+.DS_Store
+
 **/data/train*
 **/data/test*
 **/data/valid*
