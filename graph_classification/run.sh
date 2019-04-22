@@ -2,7 +2,7 @@
 
 DATA=NCI1
 
-gm=loopy_bp
+gm=mean_field
 
 LV=3
 CONV_SIZE=64
@@ -15,6 +15,7 @@ fold=1
 
 python main.py \
     -seed 1 \
+    -gm $gm \
     -data $DATA \
     -learning_rate $learning_rate \
     -num_epochs $num_epochs \

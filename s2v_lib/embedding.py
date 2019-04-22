@@ -83,11 +83,17 @@ class EmbedLoopyBP(nn.Module):
     def __init__(self, latent_dim, output_dim, num_node_feats, num_edge_feats, max_lv = 3):
         super(EmbedLoopyBP, self).__init__()
         self.latent_dim = latent_dim
+        self.output_dim = output_dim
+        self.num_node_feats = num_node_feats
+        self.num_edge_feats = num_edge_feats
+
         self.max_lv = max_lv
 
         self.w_n2l = nn.Linear(num_node_feats, latent_dim)
-        self.w_e2l = nn.Linear(num_edge_feats, latent_dim)
-        self.out_params = nn.Linear(latent_dim, output_dim)
+        if num_edge_feats > 0:
+            self.w_e2l = nn.Linear(num_edge_feats, latent_dim)
+        if output_dim > 0:
+            self.out_params = nn.Linear(latent_dim, output_dim)
 
         self.conv_params = nn.Linear(latent_dim, latent_dim)
         weights_init(self)
@@ -100,7 +106,8 @@ class EmbedLoopyBP(nn.Module):
             e2n_sp = e2n_sp.cuda()
             subg_sp = subg_sp.cuda()
         node_feat = Variable(node_feat)
-        edge_feat = Variable(edge_feat)
+        if edge_feat is not None:
+            edge_feat = Variable(edge_feat)
         n2e_sp = Variable(n2e_sp)
         e2e_sp = Variable(e2e_sp)
         e2n_sp = Variable(e2n_sp)
@@ -112,11 +119,13 @@ class EmbedLoopyBP(nn.Module):
 
     def loopy_bp(self, node_feat, edge_feat, n2e_sp, e2e_sp, e2n_sp, subg_sp):
         input_node_linear = self.w_n2l(node_feat)
-        input_edge_linear = self.w_e2l(edge_feat)
-
         n2epool_input = gnn_spmm(n2e_sp, input_node_linear)
-        
-        input_message = input_edge_linear + n2epool_input
+        input_message = n2epool_input
+
+        if edge_feat is not None:
+            input_edge_linear = self.w_e2l(edge_feat)
+            input_message += input_edge_linear
+            
         input_potential = F.relu(input_message)
 
         lv = 0
@@ -131,8 +140,11 @@ class EmbedLoopyBP(nn.Module):
 
         e2npool = gnn_spmm(e2n_sp, cur_message_layer)
         hidden_msg = F.relu(e2npool)
-        out_linear = self.out_params(hidden_msg)
-        reluact_fp = F.relu(out_linear)
+        if self.output_dim > 0:
+            out_linear = self.out_params(hidden_msg)
+            reluact_fp = F.relu(out_linear)
+        else:
+            reluact_fp = hidden_msg
 
         y_potential = gnn_spmm(subg_sp, reluact_fp)
 
