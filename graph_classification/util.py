@@ -80,8 +80,14 @@ def load_data():
     print('# classes: %d' % cmd_args.num_class)
     print('# node features: %d' % cmd_args.feat_dim)
 
-    train_idxes = np.loadtxt('./data/%s/10fold_idx/train_idx-%d.txt' % (cmd_args.data, cmd_args.fold), dtype=np.int32).tolist()
-    test_idxes = np.loadtxt('./data/%s/10fold_idx/test_idx-%d.txt' % (cmd_args.data, cmd_args.fold), dtype=np.int32).tolist()
+    train_data = np.loadtxt('./data/%s/10fold_idx/train_idx-%d.txt' % (cmd_args.data, cmd_args.fold), dtype=np.int32)
+    test_data = np.loadtxt('./data/%s/10fold_idx/test_idx-%d.txt' % (cmd_args.data, cmd_args.fold), dtype=np.int32)
+    train_idxes = train_data.tolist()
+    test_idxes = test_data.tolist()
+    if train_data.ndim == 0:
+        train_idxes = [train_idxes]
+    if test_data.ndim == 0:
+        test_idxes = [test_idxes]
 
     return [g_list[i] for i in train_idxes], [g_list[i] for i in test_idxes]
     
